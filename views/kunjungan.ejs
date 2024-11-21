@@ -1,0 +1,129 @@
+<div class="container mt-5">
+    <h1 class="text-center">Daftar Kunjungan</h1>
+
+    <!-- Form to Add New Kunjungan -->
+    <form id="addKunjunganForm" class="my-4">
+        <div class="input-group">
+            <input type="text" id="idKunjungan" class="form-control" placeholder="ID Kunjungan..." required>
+            <input type="date" id="tanggal" class="form-control" placeholder="Tanggal Kunjungan..." required>
+            <input type="number" id="jumlah" class="form-control" placeholder="Jumlah Orang..." required>
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Tambah Kunjungan</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- List of Kunjungan -->
+    <ul id="kunjunganList" class="list-group">
+        <% kunjungan.forEach(k => { %>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <strong>ID:</strong> <%= k.id %><br>
+                    <strong>Tanggal:</strong> <%= k.tanggal %><br>
+                    <strong>Jumlah:</strong> <%= k.jumlah %>
+                </span>
+                <div>
+                    <button class="btn btn-sm btn-success mr-2 editBtn" data-id="<%= k.id %>">Edit</button>
+                    <button class="btn btn-sm btn-danger deleteBtn" data-id="<%= k.id %>">Hapus</button>
+                </div>
+            </li>
+        <% }); %>
+    </ul>
+
+    <!-- Edit Kunjungan Modal -->
+    <div id="editModal" class="modal fade" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Kunjungan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editKunjunganForm">
+                        <div class="form-group">
+                            <label for="editTanggal">Tanggal</label>
+                            <input type="date" id="editTanggal" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editJumlah">Jumlah</label>
+                            <input type="number" id="editJumlah" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Simpan Perubahan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Add new kunjungan
+        $('#addKunjunganForm').on('submit', function (e) {
+            e.preventDefault();
+            const id = $('#idKunjungan').val().trim();
+            const tanggal = $('#tanggal').val().trim();
+            const jumlah = $('#jumlah').val().trim();
+
+            if (id && tanggal && jumlah) {
+                $.ajax({
+                    url: '/kunjungan',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id, tanggal, jumlah }),
+                    success: function (newKunjungan) {
+                        location.reload(); // Reload to show the new kunjungan
+                    },
+                    error: function (error) {
+                        console.error("Error adding kunjungan:", error.responseText);
+                    }
+                });
+            }
+        });
+
+        // Delete a kunjungan
+        $('.deleteBtn').on('click', function () {
+            const id = $(this).data('id');
+            $.ajax({
+                url: '/kunjungan/' + id,
+                type: 'DELETE',
+                success: function () {
+                    location.reload(); // Reload to show updated list
+                }
+            });
+        });
+
+        // Show edit modal with the current data
+        let editId;
+        $('.editBtn').on('click', function () {
+            editId = $(this).data('id');
+            const currentTanggal = $(this).closest('li').find('span').html().split('<br>')[1].split(': ')[1];
+            const currentJumlah = $(this).closest('li').find('span').html().split('<br>')[2].split(': ')[1];
+
+            $('#editTanggal').val(currentTanggal);
+            $('#editJumlah').val(currentJumlah);
+
+            $('#editModal').modal('show');
+        });
+
+        // Update kunjungan on form submission
+        $('#editKunjunganForm').on('submit', function (e) {
+            e.preventDefault();
+            const tanggal = $('#editTanggal').val().trim();
+            const jumlah = $('#editJumlah').val().trim();
+
+            if (tanggal && jumlah) {
+                $.ajax({
+                    url: '/kunjungan/' + editId,
+                    type: 'PUT',
+                    data: JSON.stringify({ tanggal, jumlah }),
+                    contentType: 'application/json',
+                    success: function () {
+                        location.reload(); // Reload to show the updated data
+                    }
+                });
+            }
+        });
+    });
+</script>

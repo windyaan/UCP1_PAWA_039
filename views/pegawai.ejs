@@ -1,0 +1,146 @@
+<div class="container mt-5">
+    <h1 class="text-center">Daftar Pegawai</h1>
+
+    <!-- Form to Add New Pegawai -->
+    <form id="addPegawaiForm" class="my-4">
+        <div class="input-group">
+            <input type="text" id="nama" class="form-control" placeholder="Nama Pegawai..." required>
+            <input type="text" id="notelp" class="form-control" placeholder="Nomor Telepon..." required>
+            <input type="text" id="alamat" class="form-control" placeholder="Alamat Pegawai..." required>
+            <input type="text" id="status" class="form-control" placeholder="Status Pegawai..." required>
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Tambah Pegawai</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- List of Pegawai -->
+    <ul id="pegawaiList" class="list-group">
+        <% pegawai.forEach(p => { %>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <strong>Nama:</strong> <%= p.nama %><br>
+                    <strong>Telepon:</strong> <%= p.notelp %><br>
+                    <strong>Alamat:</strong> <%= p.alamat %><br>
+                    <strong>Status:</strong> <%= p.status %>
+                </span>
+                <div>
+                    <button class="btn btn-sm btn-success mr-2 editBtn" data-id="<%= p.id %>">Edit</button>
+                    <button class="btn btn-sm btn-danger deleteBtn" data-id="<%= p.id %>">Hapus</button>
+                </div>
+            </li>
+        <% }); %>
+    </ul>
+
+    <!-- Edit Pegawai Modal -->
+    <div id="editModal" class="modal fade" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Pegawai</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPegawaiForm">
+                        <div class="form-group">
+                            <label for="editNama">Nama</label>
+                            <input type="text" id="editNama" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editNotelp">Nomor Telepon</label>
+                            <input type="text" id="editNotelp" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editAlamat">Alamat</label>
+                            <input type="text" id="editAlamat" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Status</label>
+                            <input type="text" id="editStatus" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Simpan Perubahan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Add new pegawai
+        $('#addPegawaiForm').on('submit', function (e) {
+            e.preventDefault();
+            const nama = $('#nama').val().trim();
+            const notelp = $('#notelp').val().trim();
+            const alamat = $('#alamat').val().trim();
+            const status = $('#status').val().trim();
+
+            if (nama && notelp && alamat && status) {
+                $.ajax({
+                    url: '/pegawai',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ nama, notelp, alamat, status }),
+                    success: function (newPegawai) {
+                        location.reload(); // Reload to show the new pegawai
+                    },
+                    error: function (error) {
+                        console.error("Error adding pegawai:", error.responseText);
+                    }
+                });
+            }
+        });
+
+        // Delete a pegawai
+        $('.deleteBtn').on('click', function () {
+            const id = $(this).data('id');
+            $.ajax({
+                url: '/pegawai/' + id,
+                type: 'DELETE',
+                success: function () {
+                    location.reload(); // Reload to show updated list
+                }
+            });
+        });
+
+        // Show edit modal with the current data
+        let editId;
+        $('.editBtn').on('click', function () {
+            editId = $(this).data('id');
+            const currentNama = $(this).closest('li').find('span').html().split('<br>')[0].split(': ')[1];
+            const currentNotelp = $(this).closest('li').find('span').html().split('<br>')[1].split(': ')[1];
+            const currentAlamat = $(this).closest('li').find('span').html().split('<br>')[2].split(': ')[1];
+            const currentStatus = $(this).closest('li').find('span').html().split('<br>')[3].split(': ')[1];
+
+            $('#editNama').val(currentNama);
+            $('#editNotelp').val(currentNotelp);
+            $('#editAlamat').val(currentAlamat);
+            $('#editStatus').val(currentStatus);
+
+            $('#editModal').modal('show');
+        });
+
+        // Update pegawai on form submission
+        $('#editPegawaiForm').on('submit', function (e) {
+            e.preventDefault();
+            const nama = $('#editNama').val().trim();
+            const notelp = $('#editNotelp').val().trim();
+            const alamat = $('#editAlamat').val().trim();
+            const status = $('#editStatus').val().trim();
+
+            if (nama && notelp && alamat && status) {
+                $.ajax({
+                    url: '/pegawai/' + editId,
+                    type: 'PUT',
+                    data: JSON.stringify({ nama, notelp, alamat, status }),
+                    contentType: 'application/json',
+                    success: function () {
+                        location.reload(); // Reload to show the updated data
+                    }
+                });
+            }
+        });
+    });
+</script>
